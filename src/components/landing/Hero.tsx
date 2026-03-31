@@ -1,84 +1,72 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 
 const Hero = () => {
     return (
-        <section className="pt-32 pb-20 px-4 overflow-hidden">
-            <div className="max-w-7xl mx-auto text-center relative">
-                {/* Subtle Background Elements */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-indigo-50 rounded-full blur-3xl -z-10 opacity-60" />
-
+        <section className="relative min-h-screen flex items-center justify-center pt-32 pb-20 px-6 overflow-hidden bg-slate-950">
+            {/* Ambient Background Glows */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-indigo-600/20 rounded-full blur-[120px] opacity-50" />
+            <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-violet-600/10 rounded-full blur-[100px] opacity-30" />
+            
+            <div className="max-w-7xl mx-auto text-center relative z-10">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
+                    transition={{ duration: 0.6 }}
                 >
-                    <span className="inline-block px-4 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-sm font-semibold mb-6">
-                        ✦ Invoice automation for freelancers
-                    </span>
-                    <h1 className="text-5xl md:text-7xl mb-6 leading-tight">
-                        Get Paid. <span className="gradient-heading">Not Ignored.</span>
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] mb-8 shadow-2xl">
+                        <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                        </span>
+                        The Future of Freelance Billing
+                    </div>
+
+                    <h1 className="text-6xl md:text-8xl font-black text-white mb-8 tracking-tighter leading-[0.9]">
+                        Get Paid <br />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-violet-400 to-indigo-400 bg-[length:200%_auto] animate-gradient">Automatically.</span>
                     </h1>
-                    <p className="text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed">
-                        Automate invoice reminders in INR and USD. Stop chasing clients.
-                        Start getting paid on time, every time.
+
+                    <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-12 font-medium leading-relaxed">
+                        The sophisticated invoicing platform for professional creators. 
+                        Track payments, automate follow-ups, and scale your business with ease.
                     </p>
 
-                    <div className="flex flex-col sm:flex-row justify-center gap-4 mb-16">
-                        <button className="btn-primary text-lg px-8 py-4">
-                            Start Free — No Card →
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-20">
+                        <a href="/signup" className="px-10 py-5 bg-indigo-600 text-white font-black rounded-2xl shadow-2xl shadow-indigo-600/40 hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all text-lg tracking-tight inline-block">
+                            Start Your Free Journey
+                        </a>
+                        <button className="px-10 py-5 bg-white/5 text-white font-black rounded-2xl backdrop-blur-md border border-white/10 hover:bg-white/10 transition-all text-lg tracking-tight">
+                            Watch Demo
                         </button>
-                        <button className="btn-secondary text-lg px-8 py-4">
-                            See How It Works ↓
-                        </button>
-                    </div>
-
-                    <div className="flex flex-wrap justify-center gap-8 md:gap-16 items-center pt-8 border-t border-slate-100">
-                        <div className="text-center">
-                            <div className="text-2xl font-bold text-slate-900">2,400+</div>
-                            <div className="text-slate-500 text-sm">Active Users</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="text-2xl font-bold text-slate-900">$12M+</div>
-                            <div className="text-slate-500 text-sm">Tracked Yearly</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="text-2xl font-bold text-slate-900">94%</div>
-                            <div className="text-slate-500 text-sm">Collection Rate</div>
-                        </div>
                     </div>
                 </motion.div>
 
-                {/* Demo Card Floating */}
+                {/* Dashboard Preview Overlay */}
                 <motion.div
-                    className="mt-20 max-w-lg mx-auto bg-white p-6 rounded-2xl shadow-2xl border border-slate-100 relative group"
-                    animate={{ y: [0, -10, 0] }}
-                    transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                    initial={{ opacity: 0, scale: 0.95, y: 40 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ duration: 0.8, delay: 0.2 }}
+                    className="relative max-w-5xl mx-auto"
                 >
-                    <div className="flex justify-between items-center mb-6">
-                        <div className="text-left">
-                            <div className="text-xs text-slate-400 font-mono">INV-0042</div>
-                            <div className="font-bold text-slate-900">Design Services</div>
-                        </div>
-                        <div className="px-3 py-1 bg-emerald-50 text-emerald-600 text-xs font-bold rounded-full border border-emerald-100">
-                            PAID ✓
-                        </div>
-                    </div>
-                    <div className="text-3xl font-bold text-slate-900 mb-2 font-mono">₹1,00,000</div>
-                    <div className="text-xs text-slate-400">Paid on March 15, 2024</div>
-
-                    <div className="absolute -right-12 -bottom-12 bg-white p-4 rounded-xl shadow-xl border border-slate-100 hidden md:block">
-                        <div className="text-xs text-indigo-600 font-bold mb-1">Reminder Sent</div>
-                        <div className="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
-                            <motion.div
-                                className="h-full bg-indigo-500"
-                                initial={{ width: 0 }}
-                                animate={{ width: "100%" }}
-                                transition={{ duration: 2, repeat: Infinity }}
-                            />
+                    <div className="absolute inset-0 bg-indigo-500/20 rounded-[2.5rem] blur-3xl -z-10 animate-pulse" />
+                    <div className="bg-slate-900/80 backdrop-blur-2xl rounded-[2.5rem] border border-white/10 p-4 shadow-2xl shadow-black">
+                        <div className="bg-slate-950 rounded-[2rem] overflow-hidden border border-white/5 aspect-video flex items-center justify-center">
+                           <div className="text-center">
+                               <div className="w-16 h-16 bg-indigo-600/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-indigo-500/30">
+                                   <div className="w-3 h-3 bg-indigo-500 rounded-full animate-ping" />
+                               </div>
+                               <p className="text-slate-500 font-bold text-sm tracking-widest uppercase">Live Dashboard Preview</p>
+                           </div>
                         </div>
                     </div>
                 </motion.div>
+            </div>
+
+            {/* Scroll Indicator */}
+            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce-slow">
+                <div className="w-6 h-10 rounded-full border-2 border-slate-700 flex justify-center p-1.5">
+                    <div className="w-1 h-2 bg-indigo-500 rounded-full animate-bounce" />
+                </div>
             </div>
         </section>
     );

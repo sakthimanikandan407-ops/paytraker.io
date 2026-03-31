@@ -22,15 +22,17 @@ import ReportsPage from './pages/dashboard/Reports';
 
 // Landing Page Wrapper
 const LandingPage = () => (
-  <div className="min-h-screen bg-slate-50/10">
+  <div className="min-h-screen bg-slate-950">
     <Navbar />
     <Hero />
     <Features />
     <Pricing />
-    <footer className="py-12 border-t border-slate-100 bg-white">
-      <div className="max-w-7xl mx-auto px-4 text-center">
-        <div className="text-2xl font-bold gradient-heading mb-6">PAY⚡TRACK</div>
-        <p className="text-slate-400 text-sm">© 2024 PayTrack.io. Built for freelancers worldwide.</p>
+    <footer className="py-20 border-t border-white/5 bg-slate-950">
+      <div className="max-w-7xl mx-auto px-6 text-center">
+        <div className="text-3xl font-black text-white tracking-tighter mb-8">
+            PayTrack<span className="text-indigo-400">.io</span>
+        </div>
+        <p className="text-slate-500 text-sm font-bold uppercase tracking-widest">© 2026 PayTrack.io. The Elite Choice for Freelancers.</p>
       </div>
     </footer>
   </div>
