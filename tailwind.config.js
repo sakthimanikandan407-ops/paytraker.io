@@ -62,6 +62,9 @@ export default {
                 display: ["Space Grotesk", "sans-serif"],
                 mono: ["JetBrains Mono", "monospace"],
             },
+            animation: {
+                'bounce-slow': 'bounce 3s infinite',
+            },
         },
     },
     plugins: [],
