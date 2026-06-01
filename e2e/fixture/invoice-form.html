@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PayTrack — Create Invoice</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f172a;
+      --surface: rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.08);
+      --text: #f1f5f9;
+      --text-muted: #64748b;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --error: #f43f5e;
+      --success: #22c55e;
+      --radius: 1rem;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    form {
+      width: 100%;
+      max-width: 480px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 1.5rem;
+      padding: 2.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      backdrop-filter: blur(24px);
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 900;
+      letter-spacing: -0.025em;
+      text-align: center;
+      margin-bottom: 0.25rem;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 0.5rem; }
+
+    label {
+      font-size: 0.65rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--text-muted);
+    }
+
+    input {
+      width: 100%;
+      padding: 0.875rem 1rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 0.875rem;
+      font-weight: 600;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+
+    input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.2);
+      background: rgba(255,255,255,0.06);
+    }
+
+    input:invalid:not(:placeholder-shown) {
+      border-color: var(--error);
+      box-shadow: 0 0 0 3px rgba(244,63,94,0.15);
+    }
+
+    input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    button[type="submit"] {
+      width: 100%;
+      padding: 1rem;
+      border: none;
+      border-radius: var(--radius);
+      background: var(--primary);
+      color: #fff;
+      font-family: var(--font);
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s, opacity 0.2s;
+      margin-top: 0.5rem;
+    }
+
+    button[type="submit"]:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    button[type="submit"]:active {
+      transform: scale(0.98);
+    }
+
+    button[type="submit"]:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .error-message {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--error);
+      display: none;
+    }
+    .error-message.visible { display: block; }
+
+    .success-banner {
+      display: none;
+      padding: 1rem;
+      border-radius: var(--radius);
+      background: rgba(34,197,94,0.12);
+      border: 1px solid rgba(34,197,94,0.25);
+      color: var(--success);
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-align: center;
+    }
+    .success-banner.visible { display: block; }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      body { padding: 1rem; }
+      form { padding: 1.5rem; border-radius: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <form id="invoice-form" novalidate>
+    <h1>Create Invoice</h1>
+
+    <div class="field">
+      <label for="client_name">Client Name</label>
+      <input type="text" id="client_name" name="client_name" placeholder="Enter client name" required />
+      <span class="error-message" data-for="client_name">Client name is required.</span>
+    </div>
+
+    <div class="field">
+      <label for="client_email">Client Email</label>
+      <input type="email" id="client_email" name="client_email" placeholder="client@example.com" required />
+      <span class="error-message" data-for="client_email">Please enter a valid email address.</span>
+    </div>
+
+    <div class="field">
+      <label for="amount">Amount</label>
+      <input type="number" id="amount" name="amount" placeholder="0.00" min="0" step="0.01" required />
+      <span class="error-message" data-for="amount">Amount must be a valid number.</span>
+    </div>
+
+    <div class="field">
+      <label for="due_date">Due Date</label>
+      <input type="date" id="due_date" name="due_date" required />
+      <span class="error-message" data-for="due_date">Due date is required.</span>
+    </div>
+
+    <div class="success-banner" id="success-msg">✓ Invoice created successfully!</div>
+
+    <button type="submit">Create Invoice</button>
+  </form>
+
+  <script>
+    const form = document.getElementById('invoice-form');
+    const successMsg = document.getElementById('success-msg');
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      // Reset
+      document.querySelectorAll('.error-message').forEach(el => el.classList.remove('visible'));
+      successMsg.classList.remove('visible');
+
+      let isValid = true;
+
+      // Validate each field
+      form.querySelectorAll('input[required]').forEach(input => {
+        const error = form.querySelector(`.error-message[data-for="${input.name}"]`);
+        if (!input.value.trim() || !input.checkValidity()) {
+          input.setAttribute('aria-invalid', 'true');
+          if (error) error.classList.add('visible');
+          isValid = false;
+        } else {
+          input.removeAttribute('aria-invalid');
+        }
+      });
+
+      if (isValid) {
+        successMsg.classList.add('visible');
+        form.reset();
+      }
+    });
+  </script>
+</body>
+</html>

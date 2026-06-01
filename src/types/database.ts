@@ -3,6 +3,7 @@ export interface Profile {
     full_name: string | null
     company_name: string | null
     avatar_url: string | null
+    logo_url: string | null
     role: 'user' | 'admin'
     plan: 'free' | 'pro' | 'studio'
     default_currency: 'USD' | 'INR'
@@ -52,4 +53,30 @@ export interface InvoiceItem {
     rate: number
     amount: number
     sort_order: number
+}
+
+export interface ReminderRule {
+    id: string
+    user_id: string
+    invoice_id: string | null
+    trigger_type: 'before_due' | 'on_due' | 'after_due'
+    days_offset: number
+    channel: 'email' | 'whatsapp' | 'both'
+    is_active: boolean
+    created_at: string
+}
+
+export interface RecurringInvoice {
+    id: string
+    user_id: string
+    client_id: string
+    frequency: 'weekly' | 'monthly' | 'quarterly' | 'yearly'
+    next_issue_date: string
+    subtotal: number
+    tax_rate: number
+    total: number
+    currency: 'USD' | 'INR'
+    description: string
+    is_active: boolean
+    created_at: string
 }
