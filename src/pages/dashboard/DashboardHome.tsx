@@ -71,7 +71,7 @@ const DashboardHome = () => {
         overdue: 0,
         totalInvoiced: 0
     });
-    const [activeProjectsCount, setActiveProjectsCount] = useState(7);
+    const [activeProjectsCount, setActiveProjectsCount] = useState(0);
     const [onboardingSteps, setOnboardingSteps] = useState<OnboardingStep[]>([]);
     const [recentActivity, setRecentActivity] = useState<(Invoice & { clients: Client })[]>([]);
 
@@ -156,7 +156,7 @@ const DashboardHome = () => {
                 const activeCount = parsed.filter((p: any) => p.status === 'active').length;
                 setActiveProjectsCount(activeCount);
             } else {
-                setActiveProjectsCount(7);
+                setActiveProjectsCount(0);
             }
 
             // Fetch Clients for onboarding check

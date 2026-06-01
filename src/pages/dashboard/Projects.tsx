@@ -82,44 +82,8 @@ const ProjectsPage = () => {
                 }));
                 setProjects(mapped);
             } else {
-                // Initialize default premium mock projects so the dashboard is populated immediately
-                const defaultMock: Project[] = [
-                    {
-                        id: 'proj-1',
-                        name: 'Corporate Identity Design',
-                        client_id: clientsList[0]?.id || 'client-1',
-                        client_name: clientsList[0]?.name || 'TechCorp Systems',
-                        budget: 155000,
-                        invoiced_amount: 95000,
-                        status: 'active',
-                        description: 'Complete rebranding guidelines, asset kits, and corporate styling.',
-                        created_at: new Date().toISOString()
-                    },
-                    {
-                        id: 'proj-2',
-                        name: 'E-Commerce Platform Expansion',
-                        client_id: clientsList[1]?.id || 'client-2',
-                        client_name: clientsList[1]?.name || 'CreativeCo Lab',
-                        budget: 280000,
-                        invoiced_amount: 280000,
-                        status: 'completed',
-                        description: 'Custom React Shopify storefront with automated payout integrations.',
-                        created_at: new Date().toISOString()
-                    },
-                    {
-                        id: 'proj-3',
-                        name: 'Mobile App Wireframing',
-                        client_id: clientsList[0]?.id || 'client-1',
-                        client_name: clientsList[0]?.name || 'TechCorp Systems',
-                        budget: 75000,
-                        invoiced_amount: 30000,
-                        status: 'on_hold',
-                        description: 'Figma layout wireframing and user stories analysis.',
-                        created_at: new Date().toISOString()
-                    }
-                ];
-                localStorage.setItem(`paytrack_projects_${user?.id}`, JSON.stringify(defaultMock));
-                setProjects(defaultMock);
+                // For a fresh account, initialize a clean slate with no projects
+                setProjects([]);
             }
         } catch (err) {
             console.error('Error fetching project workspace data:', err);
