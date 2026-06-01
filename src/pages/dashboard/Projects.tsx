@@ -74,7 +74,15 @@ const ProjectsPage = () => {
             // Check localStorage first to preserve user workspace projects
             const localProj = localStorage.getItem(`paytrack_projects_${user?.id}`);
             if (localProj) {
-                const parsed = JSON.parse(localProj);
+                let parsed = JSON.parse(localProj);
+                // Purge any old default mock projects (IDs: 'proj-1', 'proj-2', 'proj-3')
+                const cleaned = parsed.filter((p: any) => p.id !== 'proj-1' && p.id !== 'proj-2' && p.id !== 'proj-3');
+                
+                if (cleaned.length !== parsed.length) {
+                    localStorage.setItem(`paytrack_projects_${user?.id}`, JSON.stringify(cleaned));
+                    parsed = cleaned;
+                }
+
                 // Map client names
                 const mapped = parsed.map((p: any) => ({
                     ...p,

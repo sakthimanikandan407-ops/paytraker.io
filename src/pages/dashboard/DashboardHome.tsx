@@ -152,7 +152,15 @@ const DashboardHome = () => {
             // Read active projects from localStorage
             const localProj = localStorage.getItem(`paytrack_projects_${user.id}`);
             if (localProj) {
-                const parsed = JSON.parse(localProj);
+                let parsed = JSON.parse(localProj);
+                // Purge any old default mock projects (IDs: 'proj-1', 'proj-2', 'proj-3')
+                const cleaned = parsed.filter((p: any) => p.id !== 'proj-1' && p.id !== 'proj-2' && p.id !== 'proj-3');
+                
+                if (cleaned.length !== parsed.length) {
+                    localStorage.setItem(`paytrack_projects_${user.id}`, JSON.stringify(cleaned));
+                    parsed = cleaned;
+                }
+
                 const activeCount = parsed.filter((p: any) => p.status === 'active').length;
                 setActiveProjectsCount(activeCount);
             } else {
