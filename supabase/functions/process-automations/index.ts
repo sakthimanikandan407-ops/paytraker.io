@@ -442,7 +442,10 @@ serve(async (req: Request) => {
             const [itemsResult, profileResult, userResult] = await Promise.all([
                 supabase.from('invoice_items').select('*').eq('invoice_id', payload.invoice_id),
                 supabase.from('profiles').select('*').eq('id', invoice.user_id).single(),
-                supabase.auth.admin.getUser(invoice.user_id).catch(err => {
+                (typeof supabase.auth.admin?.getUserById === 'function'
+                    ? supabase.auth.admin.getUserById(invoice.user_id)
+                    : Promise.resolve(null)
+                ).catch(err => {
                     console.error('Failed to get user auth email:', err);
                     return null;
                 })
