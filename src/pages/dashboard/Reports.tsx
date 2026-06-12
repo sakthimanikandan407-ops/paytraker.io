@@ -132,6 +132,39 @@ const ReportsPage = () => {
         return formatCurrency(amount, profile?.default_currency || 'USD');
     };
 
+    const handleExportCSV = () => {
+        if (!invoices || invoices.length === 0) {
+            alert("No invoices found to export.");
+            return;
+        }
+
+        const headers = ["Invoice Number", "Issue Date", "Due Date", "Amount Due", "Currency", "Status", "Paid At"];
+        const rows = invoices.map(inv => [
+            inv.invoice_number,
+            new Date(inv.issue_date).toLocaleDateString(),
+            new Date(inv.due_date).toLocaleDateString(),
+            inv.total.toFixed(2),
+            inv.currency || 'USD',
+            inv.status,
+            inv.paid_at ? new Date(inv.paid_at).toLocaleDateString() : 'N/A'
+        ]);
+
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `paytrack-report-${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const COLORS = ['#818cf8', '#fbbf24', '#f87171', '#34d399'];
 
     const totalInvoices = invoices.length;
@@ -159,7 +192,10 @@ const ReportsPage = () => {
                         {dateRange}
                     </div>
                 </div>
-                <button className="flex items-center gap-3 px-8 py-4 bg-white text-slate-900 rounded-[1.5rem] text-xs font-black uppercase tracking-widest hover:bg-slate-200 transition-all shadow-2xl shadow-white/5">
+                <button 
+                    onClick={handleExportCSV}
+                    className="flex items-center gap-3 px-8 py-4 bg-white text-slate-900 rounded-[1.5rem] text-xs font-black uppercase tracking-widest hover:bg-slate-200 transition-all shadow-2xl shadow-white/5"
+                >
                     <Download size={18} /> Export Report
                 </button>
             </div>
