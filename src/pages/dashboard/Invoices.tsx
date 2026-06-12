@@ -78,18 +78,24 @@ const InvoicesPage = () => {
 
     const handleSend = async (id: string) => {
         setProcessingId(id);
-        const success = await sendInvoiceNotification(id);
-        if (success) {
-            const { error } = await supabase
-                .from('invoices')
-                .update({ status: 'sent' })
-                .eq('id', id);
+        // Optimistically update status in UI to 'sent' (Pending)
+        setInvoices(invoices.map(inv => inv.id === id ? { ...inv, status: 'sent' } : inv));
 
-            if (!error) {
-                setInvoices(invoices.map(inv => inv.id === id ? { ...inv, status: 'sent' } : inv));
+        // Trigger email dispatch in the background without blocking the UI
+        sendInvoiceNotification(id).then(success => {
+            if (!success) {
+                console.error(`Background email dispatch failed for invoice ${id}`);
             }
-        } else {
-            alert('Failed to send invoice. Please try again.');
+        });
+
+        // Instantly update database status
+        const { error } = await supabase
+            .from('invoices')
+            .update({ status: 'sent' })
+            .eq('id', id);
+
+        if (error) {
+            console.error('Failed to save status update in database:', error);
         }
         setProcessingId(null);
     };

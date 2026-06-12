@@ -438,26 +438,21 @@ serve(async (req: Request) => {
 
             if (invError || !invoice) throw new Error('Invoice not found: ' + (invError?.message || 'Unknown error'));
 
-            const { data: items } = await supabase
-                .from('invoice_items')
-                .select('*')
-                .eq('invoice_id', payload.invoice_id);
+            // Fetch items, profile, and user email in parallel
+            const [itemsResult, profileResult, userResult] = await Promise.all([
+                supabase.from('invoice_items').select('*').eq('invoice_id', payload.invoice_id),
+                supabase.from('profiles').select('*').eq('id', invoice.user_id).single(),
+                supabase.auth.admin.getUser(invoice.user_id).catch(err => {
+                    console.error('Failed to get user auth email:', err);
+                    return null;
+                })
+            ]);
 
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', invoice.user_id)
-                .single();
-
-            // Fetch owner user email for Reply-To
+            const items = itemsResult.data;
+            const profile = profileResult.data;
             let replyToEmail = undefined;
-            try {
-                const { data: userResp } = await supabase.auth.admin.getUser(invoice.user_id);
-                if (userResp?.user?.email) {
-                    replyToEmail = userResp.user.email;
-                }
-            } catch (err) {
-                console.error('Failed to get user auth email:', err);
+            if (userResult && 'data' in userResult && userResult.data?.user?.email) {
+                replyToEmail = userResult.data.user.email;
             }
 
             // Pre-fetch logo bytes if logo_url exists

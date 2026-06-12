@@ -231,8 +231,13 @@ const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ onClose, onSucc
                 alert(itemsError.message);
             } else {
                 if (sendAfterCreate) {
-                    const { sendInvoiceNotification } = await import('../../lib/emailService');
-                    await sendInvoiceNotification(invoice.id);
+                    import('../../lib/emailService').then(({ sendInvoiceNotification }) => {
+                        sendInvoiceNotification(invoice.id).then(success => {
+                            if (!success) {
+                                console.error(`Background email dispatch failed for invoice ${invoice.id}`);
+                            }
+                        });
+                    });
                 }
                 onSuccess();
                 onClose();
