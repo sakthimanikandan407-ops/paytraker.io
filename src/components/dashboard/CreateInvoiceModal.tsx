@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trash2, Plus, ArrowRight, ArrowLeft, Check, Search, FileText } from 'lucide-react';
+import { Trash2, Plus, ArrowRight, ArrowLeft, Check, Search, Upload, Edit, X, Loader2 } from 'lucide-react';
 
 import { supabase } from '../../lib/supabase';
 import type { Client, InvoiceItem, Profile } from '../../types/database';
@@ -27,6 +27,11 @@ const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ onClose, onSucc
     const [notes, setNotes] = useState('');
     const [autoSend, setAutoSend] = useState(true);
 
+    // Step 3 Freelancer Identity Editing States
+    const [uploadingLogo, setUploadingLogo] = useState(false);
+    const [editingCompanyName, setEditingCompanyName] = useState(false);
+    const [companyNameInput, setCompanyNameInput] = useState('');
+
     // Line Items State
     const [items, setItems] = useState<Partial<InvoiceItem>[]>([
         { description: '', quantity: 1, rate: 0, amount: 0 }
@@ -46,7 +51,75 @@ const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ onClose, onSucc
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
             const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-            if (data) setProfile(data);
+            if (data) {
+                setProfile(data);
+                setCompanyNameInput(data.company_name || '');
+            }
+        }
+    };
+
+    const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        try {
+            setUploadingLogo(true);
+            const file = e.target.files?.[0];
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!file || !user) return;
+
+            if (file.size > 2 * 1024 * 1024) {
+                alert('File too large (Max 2MB)');
+                return;
+            }
+
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+            const filePath = `logos/${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('avatars')
+                .upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: true
+                });
+
+            if (uploadError) throw uploadError;
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(filePath);
+
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ logo_url: publicUrl })
+                .eq('id', user.id);
+
+            if (updateError) throw updateError;
+
+            setProfile(prev => prev ? { ...prev, logo_url: publicUrl } : null);
+        } catch (error: any) {
+            console.error('Logo upload failed:', error);
+            alert('Logo upload failed: ' + (error.message || 'Unknown error'));
+        } finally {
+            setUploadingLogo(false);
+        }
+    };
+
+    const handleCompanyNameSave = async () => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const { error } = await supabase
+                .from('profiles')
+                .update({ company_name: companyNameInput })
+                .eq('id', user.id);
+
+            if (error) throw error;
+
+            setProfile(prev => prev ? { ...prev, company_name: companyNameInput } : null);
+            setEditingCompanyName(false);
+        } catch (error: any) {
+            console.error('Saving company name failed:', error);
+            alert('Failed to save company name: ' + (error.message || 'Unknown error'));
         }
     };
 
@@ -77,57 +150,99 @@ const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ onClose, onSucc
     const handleCreate = async (sendAfterCreate = false) => {
         setLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        // 1. Create Invoice
-        const { data: invoice, error: invError } = await supabase
-            .from('invoices')
-            .insert({
-                user_id: user.id,
-                client_id: selectedClientId,
-                invoice_number: invoiceNumber,
-                issue_date: issueDate,
-                due_date: dueDate,
-                currency,
-                subtotal: calculateSubtotal(),
-                tax_rate: taxRate,
-                tax_amount: calculateTax(),
-                total: calculateTotal(),
-                notes: notes,
-                status: sendAfterCreate ? 'sent' : 'draft'
-            })
-            .select()
-            .single();
-
-        if (invError) {
-            alert(invError.message);
+        if (!user) {
             setLoading(false);
             return;
         }
 
-        // 2. Create Items
-        const itemsToInsert = items.map((item, index) => ({
-            invoice_id: invoice.id,
-            description: item.description,
-            quantity: item.quantity,
-            rate: item.rate,
-            amount: item.amount,
-            sort_order: index
-        }));
+        try {
+            /*
+            // Check plan limits
+            const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('plan')
+                .eq('id', user.id)
+                .single();
 
-        const { error: itemsError } = await supabase.from('invoice_items').insert(itemsToInsert);
+            if (profileError) throw profileError;
 
-        if (itemsError) {
-            alert(itemsError.message);
-        } else {
-            if (sendAfterCreate) {
-                const { sendInvoiceNotification } = await import('../../lib/emailService');
-                await sendInvoiceNotification(invoice.id);
+            const currentPlan = profileData?.plan || 'free';
+
+            if (currentPlan === 'free' || currentPlan === 'starter') {
+                const limit = currentPlan === 'free' ? 15 : 50;
+                const now = new Date();
+                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+                
+                const { count, error: countError } = await supabase
+                    .from('invoices')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', user.id)
+                    .gte('created_at', startOfMonth);
+
+                if (countError) throw countError;
+
+                if (count !== null && count >= limit) {
+                    alert(`You have reached the monthly invoice limit (${limit} invoices/month) for the ${currentPlan === 'free' ? 'Solo (Free)' : 'Starter'} plan. Please upgrade your plan in the Billing portal.`);
+                    setLoading(false);
+                    return;
+                }
             }
-            onSuccess();
-            onClose();
+            */
+
+            // 1. Create Invoice
+            const { data: invoice, error: invError } = await supabase
+                .from('invoices')
+                .insert({
+                    user_id: user.id,
+                    client_id: selectedClientId,
+                    invoice_number: invoiceNumber,
+                    issue_date: issueDate,
+                    due_date: dueDate,
+                    currency,
+                    subtotal: calculateSubtotal(),
+                    tax_rate: taxRate,
+                    tax_amount: calculateTax(),
+                    total: calculateTotal(),
+                    notes: notes,
+                    status: sendAfterCreate ? 'sent' : 'draft'
+                })
+                .select()
+                .single();
+
+            if (invError) {
+                alert(invError.message);
+                setLoading(false);
+                return;
+            }
+
+            // 2. Create Items
+            const itemsToInsert = items.map((item, index) => ({
+                invoice_id: invoice.id,
+                description: item.description,
+                quantity: item.quantity,
+                rate: item.rate,
+                amount: item.amount,
+                sort_order: index
+            }));
+
+            const { error: itemsError } = await supabase.from('invoice_items').insert(itemsToInsert);
+
+            if (itemsError) {
+                alert(itemsError.message);
+            } else {
+                if (sendAfterCreate) {
+                    const { sendInvoiceNotification } = await import('../../lib/emailService');
+                    await sendInvoiceNotification(invoice.id);
+                }
+                onSuccess();
+                onClose();
+            }
+        } catch (err: any) {
+            console.error('Error enforcing invoice limits:', err);
+            alert(err.message || 'An error occurred while creating invoice.');
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     const filteredClients = clients.filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase()));
@@ -316,14 +431,66 @@ const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ onClose, onSucc
                 <div className="space-y-8 animate-in zoom-in-95 duration-300">
                     <div className="text-center p-10 bg-indigo-600/10 rounded-[2.5rem] border border-indigo-500/20 shadow-2xl shadow-indigo-600/5 relative overflow-hidden group">
                         <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <div className="w-24 h-24 bg-white rounded-3xl shadow-2xl flex items-center justify-center mx-auto mb-6 text-indigo-600 relative z-10 transform -rotate-3 group-hover:rotate-0 transition-all overflow-hidden p-2">
-                             {profile?.logo_url ? (
-                                <img src={profile.logo_url} alt="Company Logo" className="w-full h-full object-contain" />
+                        
+                        {/* Interactive Logo upload */}
+                        <div className="relative min-w-[96px] max-w-[200px] h-24 bg-white rounded-3xl shadow-2xl flex items-center justify-center mx-auto mb-6 text-indigo-600 z-10 transform -rotate-3 hover:rotate-0 transition-all overflow-hidden p-2 group/logo cursor-pointer">
+                            {uploadingLogo ? (
+                                <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+                            ) : profile?.logo_url ? (
+                                <img src={profile.logo_url} alt="Company Logo" className="max-w-full max-h-full w-auto h-auto object-contain" />
                             ) : (
-                                <FileText size={40} />
+                                <div className="flex flex-col items-center justify-center text-slate-400 hover:text-indigo-600 px-4">
+                                    <Upload size={24} />
+                                    <span className="text-[8px] font-black uppercase tracking-wider mt-1 text-center whitespace-nowrap">Add Logo</span>
+                                </div>
+                            )}
+                            
+                            {/* Hover Overlay */}
+                            <label className="absolute inset-0 bg-indigo-600/80 cursor-pointer flex flex-col items-center justify-center text-white opacity-0 group-hover/logo:opacity-100 transition-opacity duration-200">
+                                <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} disabled={uploadingLogo} />
+                                <Upload size={18} />
+                                <span className="text-[8px] font-black uppercase tracking-wider mt-1 whitespace-nowrap">Upload</span>
+                            </label>
+                        </div>
+
+                        {/* Editable Company/Freelancer Name */}
+                        <div className="relative z-10 flex items-center justify-center gap-2 max-w-md mx-auto min-h-[40px]">
+                            {editingCompanyName ? (
+                                <div className="flex items-center gap-2 bg-slate-900/60 border border-white/10 rounded-xl px-3 py-1">
+                                    <input
+                                        type="text"
+                                        className="bg-transparent text-white text-lg font-black tracking-tight outline-none w-48 text-center"
+                                        value={companyNameInput}
+                                        onChange={(e) => setCompanyNameInput(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleCompanyNameSave()}
+                                        autoFocus
+                                    />
+                                    <button 
+                                        onClick={handleCompanyNameSave}
+                                        className="text-emerald-400 hover:text-emerald-300 transition-colors"
+                                    >
+                                        <Check size={18} />
+                                    </button>
+                                    <button 
+                                        onClick={() => {
+                                            setCompanyNameInput(profile?.company_name || '');
+                                            setEditingCompanyName(false);
+                                        }}
+                                        className="text-rose-400 hover:text-rose-300 transition-colors"
+                                    >
+                                        <X size={18} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2 group/name cursor-pointer py-1 px-3 hover:bg-white/5 rounded-xl transition-colors" onClick={() => setEditingCompanyName(true)}>
+                                    <h3 className="text-2xl font-black text-white tracking-tight">
+                                        {profile?.company_name || 'Your Company Name'}
+                                    </h3>
+                                    <Edit size={16} className="text-slate-400 opacity-0 group-hover/name:opacity-100 transition-opacity hover:text-white" />
+                                </div>
                             )}
                         </div>
-                        <h3 className="text-2xl font-black text-white tracking-tight relative z-10">{profile?.company_name || 'Review Invoice'}</h3>
+
                         <p className="text-sm font-bold text-slate-400 mt-2 relative z-10 uppercase tracking-widest">Creating Invoice #{invoiceNumber}</p>
                     </div>
 

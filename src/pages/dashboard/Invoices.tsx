@@ -135,8 +135,8 @@ const InvoicesPage = () => {
     const filteredInvoices = invoices.filter(inv => {
         const matchesTab = activeTab === 'all' || inv.status === activeTab;
         const matchesSearch = 
-            inv.invoice_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            inv.clients?.name.toLowerCase().includes(searchQuery.toLowerCase());
+            (inv.invoice_number || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (inv.clients?.name || '').toLowerCase().includes(searchQuery.toLowerCase());
         return matchesTab && matchesSearch;
     });
 

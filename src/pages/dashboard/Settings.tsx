@@ -178,13 +178,13 @@ const SettingsPage = () => {
 
                     <div className="flex flex-col md:flex-row items-center gap-10">
                         <div className="relative group/logo">
-                            <div className="w-40 h-40 rounded-3xl bg-white/5 border-2 border-dashed border-white/10 flex items-center justify-center overflow-hidden transition-all group-hover/logo:border-indigo-500/50">
+                            <div className="min-w-[160px] max-w-[320px] h-40 rounded-3xl bg-white/5 border-2 border-dashed border-white/10 flex items-center justify-center overflow-hidden transition-all group-hover/logo:border-indigo-500/50">
                                 {profile.logo_url ? (
-                                    <img src={profile.logo_url} alt="Logo" className="w-full h-full object-contain p-4" />
+                                    <img src={profile.logo_url} alt="Logo" className="max-w-full max-h-full w-auto h-auto object-contain p-4" />
                                 ) : (
-                                    <div className="flex flex-col items-center text-slate-600">
+                                    <div className="flex flex-col items-center text-slate-600 px-4">
                                         <ImageIcon size={40} className="mb-2 opacity-20" />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">No Logo</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">No Logo</span>
                                     </div>
                                 )}
                             </div>
@@ -192,7 +192,7 @@ const SettingsPage = () => {
                                 <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} disabled={uploading} />
                                 <div className="flex flex-col items-center text-white scale-90 group-hover/logo:scale-100 transition-transform">
                                     {uploading ? <Loader2 size={24} className="animate-spin" /> : <Upload size={24} />}
-                                    <span className="text-[10px] font-black uppercase tracking-widest mt-2">Upload</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest mt-2 whitespace-nowrap">Upload</span>
                                 </div>
                             </label>
                         </div>

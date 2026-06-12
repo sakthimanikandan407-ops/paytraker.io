@@ -75,9 +75,9 @@ const ClientsPage = () => {
     const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
     const filteredClients = clients.filter(c => 
-        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.email.toLowerCase().includes(searchQuery.toLowerCase())
+        (c.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (c.company || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (c.email || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     useEffect(() => {
@@ -103,19 +103,54 @@ const ClientsPage = () => {
         if (!user) return;
         setSubmitLoading(true);
 
-        const { error } = await supabase
-            .from('clients')
-            .insert([{
-                user_id: user.id,
-                ...formData
-            }]);
+        try {
+            // Get user's plan
+            const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('plan')
+                .eq('id', user.id)
+                .single();
 
-        if (!error) {
-            setIsModalOpen(false);
-            setFormData({ name: '', email: '', phone: '', company: '', address: '', currency: 'USD', notes: '' });
-            fetchClients();
+            if (profileError) throw profileError;
+
+            const currentPlan = profileData?.plan || 'free';
+
+            if (currentPlan === 'free' || currentPlan === 'starter') {
+                const limit = currentPlan === 'free' ? 5 : 15;
+                const { count, error: countError } = await supabase
+                    .from('clients')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', user.id);
+
+                if (countError) throw countError;
+
+                if (count !== null && count >= limit) {
+                    alert(`You have reached the client limit (${limit} clients) for the ${currentPlan === 'free' ? 'Solo (Free)' : 'Starter'} plan. Please upgrade your plan in the Billing portal.`);
+                    setSubmitLoading(false);
+                    return;
+                }
+            }
+
+            const { error } = await supabase
+                .from('clients')
+                .insert([{
+                    user_id: user.id,
+                    ...formData
+                }]);
+
+            if (!error) {
+                setIsModalOpen(false);
+                setFormData({ name: '', email: '', phone: '', company: '', address: '', currency: 'USD', notes: '' });
+                fetchClients();
+            } else {
+                alert(error.message);
+            }
+        } catch (err: any) {
+            console.error('Error enforcing client limits:', err);
+            alert(err.message || 'An error occurred while creating client.');
+        } finally {
+            setSubmitLoading(false);
         }
-        setSubmitLoading(false);
     };
 
     return (

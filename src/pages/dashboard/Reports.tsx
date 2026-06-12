@@ -47,6 +47,8 @@ const ReportsPage = () => {
     const [profile, setProfile] = useState<Profile | null>(null);
     const [data, setData] = useState<any[]>([]);
     const [dateRange, setDateRange] = useState('');
+    const [invoices, setInvoices] = useState<any[]>([]);
+    const [statusCounts, setStatusCounts] = useState({ PAID: 0, PENDING: 0, OVERDUE: 0, DRAFT: 0 });
 
     useEffect(() => {
         if (!user) return;
@@ -60,6 +62,15 @@ const ReportsPage = () => {
             
             if (profileData) setProfile(profileData);
 
+            // Fetch Invoices
+            const { data: invoicesData } = await supabase
+                .from('invoices')
+                .select('*')
+                .eq('user_id', user.id);
+
+            const activeInvoices = invoicesData || [];
+            setInvoices(activeInvoices);
+
             // Generate dynamic date range (rolling 6 months)
             const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
             const now = new Date();
@@ -70,17 +81,48 @@ const ReportsPage = () => {
             const endLabel = `${months[now.getMonth()]} ${now.getFullYear()}`;
             setDateRange(`${startLabel} — ${endLabel}`);
 
-            // Generate dummy chart data for now based on current months
-            const dummyData = Array.from({ length: 6 }, (_, i) => {
+            // Calculate actual monthly revenue trend (paid invoices total)
+            const monthlyData = Array.from({ length: 6 }, (_, i) => {
                 const d = new Date();
                 d.setMonth(d.getMonth() - (5 - i));
+                const monthIndex = d.getMonth();
+                const year = d.getFullYear();
+                
+                const monthInvoices = activeInvoices.filter(inv => {
+                    const invDate = new Date(inv.issue_date);
+                    return invDate.getMonth() === monthIndex && invDate.getFullYear() === year;
+                });
+                
+                const revenue = monthInvoices
+                    .filter(inv => inv.status === 'paid')
+                    .reduce((sum, inv) => sum + (Number(inv.total) || 0), 0);
+                
                 return { 
-                    name: months[d.getMonth()], 
-                    revenue: 4000 + Math.random() * 3000, 
-                    count: 10 + Math.floor(Math.random() * 15) 
+                    name: months[monthIndex], 
+                    revenue: revenue, 
+                    count: monthInvoices.length 
                 };
             });
-            setData(dummyData);
+            setData(monthlyData);
+
+            // Calculate Status Counts
+            const counts = { PAID: 0, PENDING: 0, OVERDUE: 0, DRAFT: 0 };
+            activeInvoices.forEach(inv => {
+                if (inv.status === 'paid') {
+                    counts.PAID += 1;
+                } else if (inv.status === 'draft') {
+                    counts.DRAFT += 1;
+                } else if (inv.status === 'overdue') {
+                    counts.OVERDUE += 1;
+                } else if (inv.status === 'sent' || inv.status === 'viewed') {
+                    if (new Date(inv.due_date) < now) {
+                        counts.OVERDUE += 1;
+                    } else {
+                        counts.PENDING += 1;
+                    }
+                }
+            });
+            setStatusCounts(counts);
         };
 
         fetchData();
@@ -91,6 +133,21 @@ const ReportsPage = () => {
     };
 
     const COLORS = ['#818cf8', '#fbbf24', '#f87171', '#34d399'];
+
+    const totalInvoices = invoices.length;
+    const pieData = totalInvoices > 0
+        ? [
+            { name: 'PAID', value: statusCounts.PAID, color: COLORS[0] },
+            { name: 'PENDING', value: statusCounts.PENDING, color: COLORS[1] },
+            { name: 'OVERDUE', value: statusCounts.OVERDUE, color: COLORS[2] },
+            { name: 'DRAFT', value: statusCounts.DRAFT, color: COLORS[3] }
+          ].filter(item => item.value > 0)
+        : [{ name: 'NO INVOICES', value: 1, color: '#334155' }];
+
+    const getPercentage = (count: number) => {
+        if (totalInvoices === 0) return '0%';
+        return `${Math.round((count / totalInvoices) * 100)}%`;
+    };
 
     return (
         <div className="space-y-12 pb-20 animate-in fade-in duration-700">
@@ -195,56 +252,58 @@ const ReportsPage = () => {
                 </div>
 
                 {/* Side Distribution */}
-                <div className="bg-white/5 backdrop-blur-3xl p-10 rounded-[3rem] border border-white/10 shadow-2xl relative overflow-hidden group">
+                <div className="bg-white/5 backdrop-blur-3xl p-8 rounded-[2.5rem] border border-white/10 shadow-2xl relative overflow-hidden group">
                      <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-600/5 rounded-full -ml-24 -mb-24 blur-3xl group-hover:bg-purple-600/10 transition-all duration-700" />
                     <h3 className="text-2xl font-black text-white tracking-tight uppercase mb-2">Invoice Breakdown</h3>
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-12">Invoice Status distribution</p>
-                    <div className="h-[280px] w-full relative z-10">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-6">Invoice Status distribution</p>
+                    <div className="h-[180px] w-full relative z-10">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
-                                    data={[
-                                        { name: 'PAID', value: 45 },
-                                        { name: 'PENDING', value: 25 },
-                                        { name: 'OVERDUE', value: 15 },
-                                        { name: 'DRAFT', value: 15 },
-                                    ]}
-                                    innerRadius={75}
-                                    outerRadius={110}
-                                    paddingAngle={10}
+                                    data={pieData}
+                                    innerRadius={50}
+                                    outerRadius={70}
+                                    paddingAngle={5}
                                     dataKey="value"
                                 >
-                                    {COLORS.map((color, index) => (
-                                        <Cell key={`cell-${index}`} fill={color} strokeWidth={0} />
+                                    {pieData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />
                                     ))}
                                 </Pie>
                                 <Tooltip 
                                      contentStyle={{ 
-                                        backgroundColor: '#0f172a', 
-                                        borderRadius: '20px', 
-                                        border: '1px solid rgba(255,255,255,0.1)',
-                                        padding: '15px'
-                                    }}
-                                    itemStyle={{ color: '#fff', fontWeight: 900, fontSize: '10px' }}
-                                />
+                                         backgroundColor: '#0f172a', 
+                                         borderRadius: '20px', 
+                                         border: '1px solid rgba(255,255,255,0.1)',
+                                         padding: '15px'
+                                     }}
+                                     itemStyle={{ color: '#fff', fontWeight: 900, fontSize: '10px' }}
+                                 />
                             </PieChart>
                         </ResponsiveContainer>
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                             <div className="text-center">
-                                <p className="text-4xl font-black text-white tracking-tighter">100%</p>
-                                <p className="text-[9px] text-slate-600 font-black uppercase tracking-[0.3em] mt-1">Sync</p>
+                                <p className={`text-3xl font-black tracking-tighter ${totalInvoices > 0 ? 'text-white' : 'text-slate-500'}`}>{totalInvoices}</p>
+                                <p className="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em] mt-0.5">Invoices</p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="space-y-5 mt-12 relative z-10">
-                        {['PAID', 'PENDING', 'OVERDUE', 'DRAFT'].map((status, i) => (
-                            <div key={status} className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/5 hover:bg-white/10 transition-all pointer-events-none">
-                                <div className="flex items-center gap-4">
-                                    <div className={`w-3 h-3 rounded-full shadow-[0_0_10px_rgba(255,255,255,0.2)]`} style={{ backgroundColor: COLORS[i] }} />
-                                    <span className="text-[10px] font-black text-white uppercase tracking-widest">{status}</span>
+                    <div className="space-y-2.5 mt-6 relative z-10">
+                        {[
+                            { status: 'PAID', count: statusCounts.PAID, color: COLORS[0] },
+                            { status: 'PENDING', count: statusCounts.PENDING, color: COLORS[1] },
+                            { status: 'OVERDUE', count: statusCounts.OVERDUE, color: COLORS[2] },
+                            { status: 'DRAFT', count: statusCounts.DRAFT, color: COLORS[3] }
+                        ].map((item) => (
+                            <div key={item.status} className="flex justify-between items-center bg-white/5 py-2.5 px-4 rounded-xl border border-white/5 hover:bg-white/10 transition-all pointer-events-none">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-2.5 h-2.5 rounded-full shadow-[0_0_10px_rgba(255,255,255,0.2)]" style={{ backgroundColor: item.color }} />
+                                    <span className="text-[10px] font-black text-white uppercase tracking-widest">{item.status}</span>
                                 </div>
-                                <span className="text-xs font-black text-slate-500">{i === 0 ? '45%' : i === 1 ? '25%' : '15%'}</span>
+                                <span className="text-xs font-black text-slate-500">
+                                    {getPercentage(item.count)} ({item.count})
+                                </span>
                             </div>
                         ))}
                     </div>

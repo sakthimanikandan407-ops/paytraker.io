@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Bell, Search, Globe, ChevronDown, LogOut, Settings, User } from 'lucide-react';
+import { Bell, Globe, ChevronDown, LogOut, Settings, User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useSearch } from '../../contexts/SearchContext';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -12,7 +11,6 @@ interface TopbarProps {
 
 const Topbar: React.FC<TopbarProps> = ({ title }) => {
     const { user, signOut } = useAuth();
-    const { searchQuery, setSearchQuery } = useSearch();
     const [showProfile, setShowProfile] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
     const [currentCurrency, setCurrentCurrency] = useState('USD');
@@ -59,16 +57,6 @@ const Topbar: React.FC<TopbarProps> = ({ title }) => {
             <h1 className="text-xl font-black text-white tracking-tight leading-none">{title}</h1>
 
             <div className="flex items-center gap-6">
-                <div className="relative hidden lg:block">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                    <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search invoices, clients..."
-                        className="pl-12 pr-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white/10 transition-all w-80 placeholder:text-slate-600 font-medium"
-                    />
-                </div>
 
                 <div className="relative">
                     <button 

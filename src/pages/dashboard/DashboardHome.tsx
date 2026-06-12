@@ -75,21 +75,9 @@ const DashboardHome = () => {
     const [onboardingSteps, setOnboardingSteps] = useState<OnboardingStep[]>([]);
     const [recentActivity, setRecentActivity] = useState<(Invoice & { clients: Client })[]>([]);
 
-    // Mock Composed Chart Data scaled to perfectly match mockup relative heights and slopes
-    const composedChartData = [
-        { name: 'Jan', revenue: 620000, collected: 450000 },
-        { name: 'Feb', revenue: 850000, collected: 520000 },
-        { name: 'Mar', revenue: 980000, collected: 680000 },
-        { name: 'Apr', revenue: 1320000, collected: 810000 },
-        { name: 'May', revenue: 1245000, collected: 972000 }
-    ];
-
-    // Mock Client Breakdown Donut Chart Data matching the mockup exactly
-    const clientBreakdownData = [
-        { name: 'TechCorp', value: 45, color: '#6366f1' },  // Indigo
-        { name: 'CreativeCo', value: 30, color: '#a78bfa' }, // Violet
-        { name: 'Startups', value: 25, color: '#14b8a6' }   // Teal
-    ];
+    const [composedChartData, setComposedChartData] = useState<any[]>([]);
+    const [clientBreakdownData, setClientBreakdownData] = useState<any[]>([]);
+    const [clientTotalBilled, setClientTotalBilled] = useState(0);
 
     useEffect(() => {
         if (!user) return;
@@ -148,6 +136,71 @@ const DashboardHome = () => {
 
             setStats({ outstanding, collectedMtd, overdue, totalInvoiced });
             setRecentActivity(invoices.slice(0, 5));
+
+            // Calculate Composed Chart Data (Revenue Performance) for last 5 months
+            const chartMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const last5Months = Array.from({ length: 5 }, (_, i) => {
+                const d = new Date();
+                d.setMonth(d.getMonth() - (4 - i));
+                return {
+                    monthIndex: d.getMonth(),
+                    year: d.getFullYear(),
+                    name: chartMonths[d.getMonth()],
+                    revenue: 0,
+                    collected: 0
+                };
+            });
+
+            invoices.forEach(inv => {
+                const invDate = new Date(inv.issue_date);
+                const invMonth = invDate.getMonth();
+                const invYear = invDate.getFullYear();
+                
+                const match = last5Months.find(m => m.monthIndex === invMonth && m.year === invYear);
+                if (match) {
+                    const total = Number(inv.total) || 0;
+                    if (inv.status !== 'draft' && inv.status !== 'cancelled') {
+                        match.revenue += total;
+                    }
+                    if (inv.status === 'paid') {
+                        match.collected += total;
+                    }
+                }
+            });
+
+            setComposedChartData(last5Months);
+
+            // Calculate Client Breakdown Donut Chart Data
+            const clientAmounts: { [key: string]: number } = {};
+            let totalBilled = 0;
+
+            invoices.forEach(inv => {
+                if (inv.status !== 'draft' && inv.status !== 'cancelled') {
+                    const clientName = inv.clients?.name || 'Unknown Client';
+                    const amount = Number(inv.total) || 0;
+                    clientAmounts[clientName] = (clientAmounts[clientName] || 0) + amount;
+                    totalBilled += amount;
+                }
+            });
+
+            setClientTotalBilled(totalBilled);
+
+            const colors = ['#6366f1', '#a78bfa', '#14b8a6', '#f43f5e', '#eab308'];
+            const calculatedBreakdown = Object.entries(clientAmounts).map(([name, amount], index) => {
+                const percentage = totalBilled > 0 ? Math.round((amount / totalBilled) * 100) : 0;
+                return {
+                    name,
+                    value: amount,
+                    percentage,
+                    color: colors[index % colors.length]
+                };
+            });
+
+            if (calculatedBreakdown.length === 0) {
+                setClientBreakdownData([{ name: 'No Invoices', value: 1, percentage: 0, color: '#334155' }]);
+            } else {
+                setClientBreakdownData(calculatedBreakdown);
+            }
             
             // Read active projects from localStorage
             const localProj = localStorage.getItem(`paytrack_projects_${user.id}`);
@@ -411,9 +464,11 @@ const DashboardHome = () => {
                                 </Pie>
                             </PieChart>
                         </ResponsiveContainer>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Share</span>
-                            <span className="text-3xl font-black text-white">100%</span>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 pointer-events-none">
+                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Total Billed</span>
+                            <span className="text-base font-black text-white tracking-tight truncate max-w-full mt-0.5">
+                                {clientTotalBilled > 0 ? displayCurrency(clientTotalBilled).replace(/\.00$/, '') : displayCurrency(0)}
+                            </span>
                         </div>
                     </div>
 
@@ -425,7 +480,9 @@ const DashboardHome = () => {
                                     <div className="w-3 h-3 rounded-full border border-white/10" style={{ backgroundColor: item.color }} />
                                     <span className="text-white">{item.name}</span>
                                 </div>
-                                <span className="text-slate-500">{item.value}%</span>
+                                <span className="text-slate-500">
+                                    {clientTotalBilled > 0 ? `${displayCurrency(item.value).replace(/\.00$/, '')} (${item.percentage}%)` : '— (0%)'}
+                                </span>
                             </div>
                         ))}
                     </div>

@@ -37,30 +37,72 @@ const CreateRecurringInvoiceModal = ({ onClose, onSuccess }: Props) => {
 
         setLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const total = subtotal + (subtotal * (taxRate / 100));
-
-        const { error } = await supabase.from('recurring_invoices').insert({
-            user_id: user.id,
-            client_id: selectedClientId,
-            description,
-            frequency,
-            next_issue_date: nextIssueDate,
-            subtotal,
-            tax_rate: taxRate,
-            total,
-            currency,
-            is_active: true
-        });
-
-        if (error) {
-            alert(error.message);
-        } else {
-            onSuccess();
-            onClose();
+        if (!user) {
+            setLoading(false);
+            return;
         }
-        setLoading(false);
+
+        try {
+            /*
+            // Check plan limits
+            const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('plan')
+                .eq('id', user.id)
+                .single();
+
+            if (profileError) throw profileError;
+
+            const currentPlan = profileData?.plan || 'free';
+
+            if (currentPlan === 'free' || currentPlan === 'starter') {
+                const limit = currentPlan === 'free' ? 15 : 50;
+                const now = new Date();
+                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+                
+                const { count, error: countError } = await supabase
+                    .from('invoices')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', user.id)
+                    .gte('created_at', startOfMonth);
+
+                if (countError) throw countError;
+
+                if (count !== null && count >= limit) {
+                    alert(`You have reached the monthly invoice limit (${limit} invoices/month) for the ${currentPlan === 'free' ? 'Solo (Free)' : 'Starter'} plan. Please upgrade your plan in the Billing portal.`);
+                    setLoading(false);
+                    return;
+                }
+            }
+            */
+
+            const total = subtotal + (subtotal * (taxRate / 100));
+
+            const { error } = await supabase.from('recurring_invoices').insert({
+                user_id: user.id,
+                client_id: selectedClientId,
+                description,
+                frequency,
+                next_issue_date: nextIssueDate,
+                subtotal,
+                tax_rate: taxRate,
+                total,
+                currency,
+                is_active: true
+            });
+
+            if (error) {
+                alert(error.message);
+            } else {
+                onSuccess();
+                onClose();
+            }
+        } catch (err: any) {
+            console.error('Error enforcing invoice limits:', err);
+            alert(err.message || 'An error occurred while creating recurring invoice.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const filteredClients = clients.filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase()));
