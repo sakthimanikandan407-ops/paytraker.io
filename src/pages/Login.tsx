@@ -105,8 +105,9 @@ const LoginPage = () => {
                 className="max-w-md w-full"
             >
                 <div className="text-center mb-10">
-                    <a href="/" className="text-4xl font-black text-white tracking-tighter mb-4 inline-block">
-                        PayTrack
+                    <a href="/" className="flex items-center justify-center gap-3 text-4xl font-black text-white tracking-tighter mb-4">
+                        <img src="/paytrack-logo.svg" className="w-12 h-12 object-contain" alt="PayTrack Logo" />
+                        <span>PayTrack</span>
                     </a>
                     <h2 className="text-2xl font-bold text-white mt-4">
                         {showForgot ? 'Reset Password' : 'Welcome Back'}

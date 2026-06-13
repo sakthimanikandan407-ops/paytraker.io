@@ -47,10 +47,8 @@ const LandingPage = () => (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-12 pb-16 border-b border-white/5">
           {/* Logo & Intro Column */}
           <div className="col-span-2 space-y-6">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-600/20">
-                <span className="text-white font-black text-xl italic leading-none">P</span>
-              </div>
+            <div className="flex items-center gap-3">
+              <img src="/paytrack-logo.svg" className="w-10 h-10 object-contain" alt="PayTrack Logo" />
               <span className="text-xl font-black text-white tracking-tighter">PayTrack</span>
             </div>
             <p className="text-slate-400 text-sm font-semibold max-w-sm leading-relaxed">

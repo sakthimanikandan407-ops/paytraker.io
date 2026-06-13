@@ -7,10 +7,8 @@ const Navbar = () => {
     return (
         <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4">
             <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3 bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl">
-                <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-600/20">
-                        <span className="text-white font-black text-xl italic leading-none">P</span>
-                    </div>
+                <div className="flex items-center gap-3">
+                    <img src="/paytrack-logo.svg" className="w-10 h-10 object-contain" alt="PayTrack Logo" />
                     <span className="text-xl font-black text-white tracking-tighter">PayTrack</span>
                 </div>
                 

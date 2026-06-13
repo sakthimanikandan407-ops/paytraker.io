@@ -27,8 +27,9 @@ const Sidebar = () => {
     return (
         <aside className="fixed left-0 top-0 h-screen w-64 bg-slate-950 border-r border-white/5 flex flex-col z-30">
             <div className="p-8">
-                <NavLink to="/" className="text-2xl font-black text-white tracking-tighter">
-                    PayTrack
+                <NavLink to="/" className="flex items-center gap-3 text-2xl font-black text-white tracking-tighter">
+                    <img src="/paytrack-logo.svg" className="w-8 h-8 object-contain" alt="PayTrack Logo" />
+                    <span>PayTrack</span>
                 </NavLink>
             </div>
 

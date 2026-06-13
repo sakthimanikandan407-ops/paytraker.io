@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Rounded square background (squircle shape) -->
+  <rect width="100" height="100" rx="24" fill="#4F46E5" />
+  
+  <!-- High-fidelity custom vector path for bold italic 'P' -->
+  <path d="M30 75 L45 25 H62 C73 25 80 32 80 42 C80 53 72 60 59 60 H44 L40 75 H30 Z M48 49 H57 C63 49 68 46 68 41 C68 36 64 33 58 33 H53 L48 49 Z" fill="#FFFFFF" />
+</svg>
